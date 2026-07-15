@@ -85,6 +85,43 @@ def _get_engine():
     return _engine
 
 
+def _trim_and_normalize(ref: Path) -> None:
+    """참조 오디오 앞뒤 무음 제거 + 피크 정규화.
+
+    zero-shot은 참조의 침묵 패턴·볼륨까지 복제하므로, 무음이 긴 참조를 주면
+    출력 앞에 긴 무음이 생성돼 시간을 낭비한다. 클릭성 잡음에 속지 않도록
+    100ms 이상 연속 활성 구간만 말소리 시작으로 인정한다.
+    """
+    import torchaudio
+
+    wav, sr = torchaudio.load(str(ref))
+    mono = wav.mean(dim=0)
+    frame = int(sr * 0.02)  # 20ms
+    n = len(mono) // frame
+    if n < 10:
+        return
+    rms = mono[: n * frame].reshape(n, frame).pow(2).mean(dim=1).sqrt()
+    thresh = max(rms.max().item() * 0.1, 1e-4)
+    active = rms > thresh
+    sustained = [
+        i for i in range(n - 4) if bool(active[i : i + 5].all())
+    ]  # 5프레임(100ms) 연속 활성
+    if not sustained:
+        return
+    pad = int(0.2 / 0.02)  # 앞뒤 0.2초 여유
+    start = max(0, sustained[0] - pad) * frame
+    end = min(n, sustained[-1] + 5 + pad) * frame
+    trimmed = mono[start:end]
+    peak = trimmed.abs().max().item()
+    if peak > 0:
+        trimmed = trimmed * min(0.9 / peak, 10.0)  # 과도한 증폭은 10배로 제한
+    torchaudio.save(str(ref), trimmed.unsqueeze(0), sr)
+    logger.info(
+        "참조 오디오 트리밍: %.2fs → %.2fs (게인 %.1fx)",
+        len(mono) / sr, len(trimmed) / sr, min(0.9 / peak, 10.0) if peak > 0 else 1.0,
+    )
+
+
 def save_voicepack(member_id: str, script: str, filename: str | None, audio_bytes: bytes) -> str:
     """참조 오디오+대사를 ~/familog-data/voicepacks/{member_id}/에 저장."""
     settings = get_settings()
@@ -95,18 +132,20 @@ def save_voicepack(member_id: str, script: str, filename: str | None, audio_byte
     source = pack_dir / f"source{suffix}"
     source.write_bytes(audio_bytes)
 
-    # CosyVoice 입력용으로 16kHz mono WAV 정규화 (m4a 등 녹음 포맷 대응, macOS afconvert)
+    # CosyVoice 입력용으로 16kHz mono WAV 정규화 (m4a 등 녹음 포맷 대응, ffmpeg — macOS/리눅스 공통)
     ref = pack_dir / REFERENCE_WAV
     result = subprocess.run(
-        ["afconvert", "-f", "WAVE", "-d", "LEI16@16000", "-c", "1", str(source), str(ref)],
+        ["ffmpeg", "-y", "-i", str(source), "-ar", "16000", "-ac", "1", "-sample_fmt", "s16", str(ref)],
         capture_output=True,
     )
     if result.returncode != 0:
         if suffix == ".wav":
             shutil.copyfile(source, ref)  # 변환 실패해도 wav면 원본 그대로 사용
-            logger.warning("afconvert 실패, 원본 wav 사용: %s", result.stderr.decode(errors="replace"))
+            logger.warning("ffmpeg 실패, 원본 wav 사용: %s", result.stderr.decode(errors="replace"))
         else:
             raise ValueError(f"참조 오디오 변환 실패: {result.stderr.decode(errors='replace')}")
+
+    _trim_and_normalize(ref)
 
     (pack_dir / SCRIPT_TXT).write_text(script.strip(), encoding="utf-8")
     return f"{VOICEPACK_PREFIX}{member_id}"
