@@ -10,6 +10,10 @@ venv/
 # 생성 결과물 (이미지·오디오·보이스팩)
 data/
 
+# 외부 모델 코드·가중치 (커밋 금지)
+third_party/
+pretrained_models/
+
 ### IntelliJ IDEA / PyCharm ###
 .idea/
 *.iml

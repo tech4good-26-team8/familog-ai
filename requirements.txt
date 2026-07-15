@@ -1,3 +1,24 @@
+# Python 3.11 필수 (torch 2.3.1이 3.12+/3.14 미지원 — 기존 3.14 venv 사용 불가)
+#
+# 설치 순서 (CosyVoice2 의존성 포함, 순서 중요):
+#   python3.11 -m venv venv && source venv/bin/activate
+#   pip install -r requirements.txt
+#   git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git third_party/CosyVoice
+#   pip install "setuptools<81"                                  # openai-whisper 빌드용 pkg_resources
+#   pip install --no-build-isolation openai-whisper==20231117    # 빌드 시 torch 필요
+#   pip install -r third_party/CosyVoice/requirements.txt
+#
+# 모델 가중치 (약 2GB, 커밋 금지) — HuggingFace 미러가 ModelScope보다 훨씬 빠름:
+#   pip install "huggingface_hub<1.0" hf_transfer
+#   HF_HUB_ENABLE_HF_TRANSFER=1 hf download FunAudioLLM/CosyVoice2-0.5B --local-dir pretrained_models/CosyVoice2-0.5B
+
 fastapi
 uvicorn
+python-multipart
+python-dotenv
 openai
+
+# CosyVoice2 (핵심만 — 나머지는 third_party/CosyVoice/requirements.txt 참조)
+torch==2.3.1
+torchaudio==2.3.1
+numpy==1.26.4
