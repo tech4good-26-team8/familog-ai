@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# 환경변수 (API 키)
+.env
+
+# 생성 결과물 (이미지·오디오·보이스팩)
+data/
+
+### IntelliJ IDEA / PyCharm ###
+.idea/
+*.iml
+
+### VS Code ###
+.vscode/
+
+### macOS ###
+.DS_Store
