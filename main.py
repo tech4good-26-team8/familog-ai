@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from core.config import get_settings
-from routers import voice
+from routers import avatar, voice
 from services import cosyvoice_tts
 
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +19,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="familog-ai", lifespan=lifespan)
+app.include_router(avatar.router)
 app.include_router(voice.router)
 
 

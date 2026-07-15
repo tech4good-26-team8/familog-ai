@@ -24,13 +24,17 @@ class Settings:
         ).expanduser()
         # cosyvoice | mock (mock = macOS say — 모델 없이 계약만 확인용)
         self.tts_engine = os.getenv("TTS_ENGINE", "cosyvoice")
+        # 아바타 생성(OpenAI 이미지 API)용
+        self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
 
         self.voicepack_dir = self.data_dir / "voicepacks"
         self.message_dir = self.data_dir / "messages"
+        self.avatars_dir = self.data_dir / "avatars"
 
     def ensure_dirs(self) -> None:
         self.voicepack_dir.mkdir(parents=True, exist_ok=True)
         self.message_dir.mkdir(parents=True, exist_ok=True)
+        self.avatars_dir.mkdir(parents=True, exist_ok=True)
 
 
 @lru_cache
