@@ -7,9 +7,9 @@ from core.config import get_settings
 
 # 02_TECH_FLOW.md §8-2 결정: 3D 메시가 아닌 "3D풍 PNG", Memoji/AR이모지 느낌의 정적 캐릭터.
 AVATAR_PROMPT = (
-    "Turn this person's photo into a cute 3D-style memoji/AR-emoji character portrait. "
-    "Keep recognizable facial features (hair, glasses, expression), soft 3D shading, "
-    "simple neutral background, front-facing, head-and-shoulders framing."
+    "Turn this person's photo into a cute 3D-style iphone memoji/AR-emoji character portrait with only the face without neck. "
+    "Keep recognizable facial features (hair, glasses, expression), soft 3D shading, " 
+    "no background, front-facing, head especially only face framing without neck."
 )
 
 _client: OpenAI | None = None
